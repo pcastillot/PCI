@@ -21,15 +21,20 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     noticiasNoDespoblacion = None
     noticiasSinMarcar = None
     noticiasTesting = None
-    listaPalabrasDespoblacion = []
-    listaPalabrasNoDespoblacion = []
-    listaPalabrasSinMarcar = []
     listaPalabrasContadasDespoblacion = []
     listaPalabrasContadasNoDespoblacion = []
     listaPalabrasContadasSinMarcar = []
 
+    #Inicializamos el stopwords
+    stop_words = set(corpus.stopwords.words('spanish'))
+
+    #Inicializamos el stemmer
+    stemmer = stem.SnowballStemmer('spanish')
+
+
 
     def __init__(self, *args, **kwargs):
+        #Inicializacion de la ventana y listeners
         QtWidgets.QMainWindow.__init__(self, *args, **kwargs)
         self.setupUi(self)
         self.btnRutaDespoblacion.clicked.connect(lambda: self.abrirRuta(0))
@@ -39,9 +44,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.btnRutaModelo.clicked.connect(self.abrirModelo)
         self.btnGenerarModelo.clicked.connect(self.generarModelo)
         
-        
+    
     def abrirRuta(self, i):
+        #Guardamos en la variable la ruta seleccionada a traves de la ventana.
         my_dir = str(QFileDialog.getExistingDirectory(self, "Abre una carpeta", expanduser("~"), QFileDialog.ShowDirsOnly))
+
+        #Dependiendo del boton presionado se guardara la ruta en diferentes variables
         if i == 0:
             self.lblRutaDespoblacion.setText(my_dir)
             self.dirDespoblacion = my_dir
@@ -77,15 +85,46 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.noticiasDespoblacion = self.getFicherosDirectorio(self.dirDespoblacion)
             self.noticiasSinMarcar = self.getFicherosDirectorio(self.dirSinMarcar)
 
-            for noticia in self.noticiasNoDespoblacion:
-                f = open(noticia)
-                raw = f.read()
-                tokens = word_tokenize(raw)
-                filtered = [w for w in tokens if w.isalnum()]
-                self.listaPalabrasNoDespoblacion += filtered
-            self.listaPalabrasContadasNoDespoblacion = Counter(self.listaPalabrasNoDespoblacion)
+            #Procesamiento de texto
+            self.listaPalabrasContadasDespoblacion = self.getPalabrasContadas(self.noticiasDespoblacion)
+            self.listaPalabrasContadasNoDespoblacion = self.getPalabrasContadas(self.noticiasNoDespoblacion)
+
+            print("Palabras Despoblacion:")
+            print(self.listaPalabrasContadasDespoblacion)
+            print("---------------------------------")
+            print("Palabras No Despoblacion:")
             print(self.listaPalabrasContadasNoDespoblacion)
 
+    
+    def getPalabrasContadas(self, listaNoticias):
+
+        listaPalabras = []
+
+        for noticia in listaNoticias:
+
+            #Abrimos cada noticia de no despoblacion y guardamos en raw el texto plano
+            print(noticia)
+            f = open(noticia)
+            raw = f.read()
+
+            #Tokenizamos el texto guardandolo en una lista
+            tokens = word_tokenize(raw)
+
+            #Quitamos los elementos que no sean palabras
+            filteredAlNum = [w.lower() for w in tokens if w.isalnum()]
+
+            #Quitamos los elementos que sean preposiciones, determinantes, etc (palabras que no aportan la informacion que necesitamos)
+            filteredStopwords = [w for w in filteredAlNum if not w in self.stop_words]
+
+            #Eliminamos los sufijos y prefijos de las palabras de la ultima lista
+            filteredStem = [self.stemmer.stem(w) for w in filteredStopwords]
+
+            #Añadimos a la lista de palabras que aparecen en las noticias de no despoblacion la ultima lista
+            listaPalabras += filteredStem
+        
+        #Contamos todas las palabras que se repiten guardando en una tupla las palabras y las veces que aparecen
+        palabrasContadas = Counter(listaPalabras)
+        return palabrasContadas
 
     
 if __name__ == "__main__":
