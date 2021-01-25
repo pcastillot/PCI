@@ -1,18 +1,21 @@
 from main_ui import *
 from os import listdir
-import numpy as np
 from os.path import expanduser, isfile, join
-from PyQt5.QtWidgets import QFileDialog
-import glob
-import ctypes
+from PyQt5.QtWidgets import QFileDialog, QTableWidgetItem
 from nltk import *
 from collections import Counter
 from sklearn.tree import DecisionTreeClassifier # Import Decision Tree Classifier
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split # Import train_test_split function
 from sklearn import metrics #Import scikit-learn metrics module for accuracy calculation
-import pandas as pd
 from joblib import dump, load
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.metrics import confusion_matrix
 import pickle
+import pandas as pd
+import glob
+import ctypes
+import numpy as np
 
 
 
@@ -46,8 +49,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.btnRutaDespoblacion.clicked.connect(lambda: self.abrirRuta(0))
         self.btnRutaNoDespoblacion.clicked.connect(lambda: self.abrirRuta(1))
-        self.btnRutaSinMarcar.clicked.connect(lambda: self.abrirRuta(2))
-        self.btnRutaNoticias.clicked.connect(lambda: self.abrirRuta(3))
+        self.btnRutaNoticias.clicked.connect(lambda: self.abrirRuta(2))
         self.btnRutaModelo.clicked.connect(self.abrirModelo)
         self.btnGenerarModelo.clicked.connect(self.generarModelo)
         
@@ -66,18 +68,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.dirNoDespoblacion = my_dir
 
         elif i == 2: 
-            self.lblRutaSinMarcar.setText(my_dir)
-            self.dirSinMarcar = my_dir
-
-        elif i == 3: 
             self.lblRutaNoticias.setText(my_dir)
             self.dirRutaNoticias = my_dir
 
     def abrirModelo(self):
         modelo = QFileDialog.getOpenFileName(self, 'Abrir modelo', 'c:\\', "Modelo (*.*)")
-        self.lblRutaModelo.setText(modelo[0])
-        self.dirModelo = modelo[0]
-        modelo = self.cargarModelo(self.dirModelo)
+        if modelo:
+            self.lblRutaModelo.setText(modelo[0])
+            self.dirModelo = modelo[0]
+            modelo = self.cargarModelo(self.dirModelo)
     
 
     def getFicherosDirectorio(self, dir):
@@ -95,7 +94,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             #Obtenemos las rutas de los archivos
             noticiasNoDespoblacion = self.getFicherosDirectorio(self.dirNoDespoblacion)
             noticiasDespoblacion = self.getFicherosDirectorio(self.dirDespoblacion)
-            noticiasSinMarcar = self.getFicherosDirectorio(self.dirSinMarcar)
 
             #Procesamiento de texto
             listaPalabrasContadasDespoblacion = self.getPalabrasContadas(noticiasDespoblacion, 1)
@@ -142,16 +140,53 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             #Divide los datos en training y testing
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1) # 80% training y 20% test
 
-            #Creamos el clasificador y lo entrenamos
-            clf = DecisionTreeClassifier()    
-            clf = clf.fit(X_train,y_train)
+            #Creamos el clasificador dependiendo del algoritmo elegido y lo entrenamos
+            #Arbol de decision
+            if self.cbAlgoritmo.currentIndex() == 0:
+                clf = DecisionTreeClassifier()    
+                clf = clf.fit(X_train,y_train)
+            
+            #K-nn Neighbours
+            elif self.cbAlgoritmo.currentIndex() == 1:
+                clf = KNeighborsClassifier(n_neighbors=5)   
+                clf = clf.fit(X_train,y_train)
+
+            #Naive Bayes
+            elif self.cbAlgoritmo.currentIndex() == 2:
+                clf = MultinomialNB()   
+                clf = clf.fit(X_train,y_train)
+
+            #Algoritmo 4
+            elif self.cbAlgoritmo.currentIndex() == 3:
+                clf = DecisionTreeClassifier()    
+                clf = clf.fit(X_train,y_train)
+
+            #Algoritmo 5
+            elif self.cbAlgoritmo.currentIndex() == 4:
+                clf = DecisionTreeClassifier()    
+                clf = clf.fit(X_train,y_train)
 
             #Guardamos en una variable el resultado de la prediccion
             y_pred = clf.predict(X_test)
 
-            #Imprimimos el % de acierto en consola
-            print(metrics.accuracy_score(y_test, y_pred))
+            #Imprimimos el % de acierto en la etiqueta
+            self.lblAcierto.setText(str(round(metrics.accuracy_score(y_test, y_pred)*100, 2)) + "%")
+
+            #Imprimimos el % de precision en la etiqueta
+            self.lblPrecision.setText(str(round(metrics.precision_score(y_test, y_pred)*100, 2)) + "%")
             
+            #Obtenemos la matriz de resultados e imprimimos resultados en la tabla
+            matrizResultados = confusion_matrix(y_test, y_pred)
+
+            self.tableEstadisticas.setItem(0, 0, QTableWidgetItem(str(matrizResultados[0][0])))
+            self.tableEstadisticas.setItem(0, 1, QTableWidgetItem(str(matrizResultados[0][1])))
+            self.tableEstadisticas.setItem(1, 0, QTableWidgetItem(str(matrizResultados[1][0])))
+            self.tableEstadisticas.setItem(1, 1, QTableWidgetItem(str(matrizResultados[1][1])))
+            self.tableEstadisticas.setItem(2, 0, QTableWidgetItem(str(round(matrizResultados[0][0]/(matrizResultados[0][0]+matrizResultados[1][0]), 2)*100) + "%"))
+            self.tableEstadisticas.setItem(2, 1, QTableWidgetItem(str(round(matrizResultados[1][1]/(matrizResultados[0][1]+matrizResultados[1][1]), 2)*100) + "%"))
+            self.tableEstadisticas.setItem(0, 2, QTableWidgetItem(str(round(matrizResultados[0][0]/(matrizResultados[0][0]+matrizResultados[0][1]), 2)*100) + "%"))
+            self.tableEstadisticas.setItem(1, 2, QTableWidgetItem(str(round(matrizResultados[1][1]/(matrizResultados[1][0]+matrizResultados[1][1]), 2)*100) + "%"))
+
             #Guardamos el modelo
             self.guardarModelo(clf)
 
@@ -196,8 +231,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     
     def guardarModelo(self, model):
         filename = QFileDialog.getSaveFileName(self, caption="Guardar modelo", filter="Modelo (*.model)")
-        with open(filename[0], 'wb') as file:
-            pickle.dump(model, file)
+        if filename[0] != "":
+            with open(filename[0], 'wb') as file:
+                pickle.dump(model, file)
 
     
     def cargarModelo(self, filename):
