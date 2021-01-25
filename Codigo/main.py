@@ -1,11 +1,18 @@
 from main_ui import *
 from os import listdir
+import numpy as np
 from os.path import expanduser, isfile, join
 from PyQt5.QtWidgets import QFileDialog
 import glob
 import ctypes
 from nltk import *
 from collections import Counter
+from sklearn.tree import DecisionTreeClassifier # Import Decision Tree Classifier
+from sklearn.model_selection import train_test_split # Import train_test_split function
+from sklearn import metrics #Import scikit-learn metrics module for accuracy calculation
+import pandas as pd
+from joblib import dump, load
+import pickle
 
 
 
@@ -17,13 +24,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     dirNoDespoblacion = "..\\Datos\\no_despoblacion"
     dirSinMarcar = "..\\Datos\\unlabeled"
     dirRutaNoticias = None
-    noticiasDespoblacion = None
-    noticiasNoDespoblacion = None
-    noticiasSinMarcar = None
     noticiasTesting = None
     listaPalabrasContadasDespoblacion = []
     listaPalabrasContadasNoDespoblacion = []
     listaPalabrasContadasSinMarcar = []
+    listaPalabras = []
+
+    
 
     #Inicializamos el stopwords
     stop_words = set(corpus.stopwords.words('spanish'))
@@ -70,61 +77,134 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         modelo = QFileDialog.getOpenFileName(self, 'Abrir modelo', 'c:\\', "Modelo (*.*)")
         self.lblRutaModelo.setText(modelo[0])
         self.dirModelo = modelo[0]
+        modelo = self.cargarModelo(self.dirModelo)
     
 
     def getFicherosDirectorio(self, dir):
+        #Crea una lista con la ruta de todos los ficheros
         ficheros = glob.glob(dir + "/*.txt")
         return ficheros
 
 
     def generarModelo(self):
+        #Comprobacion de que todas las rutas se han seleccionado
         if self.dirDespoblacion == None or self.dirNoDespoblacion == None or self.dirSinMarcar == None:
+            #Mensaje de error
             ctypes.windll.user32.MessageBoxW(0, "Debes elegir una ruta para todos las noticias", "Error al recuperar noticias", 0)
         else:
-            self.noticiasNoDespoblacion = self.getFicherosDirectorio(self.dirNoDespoblacion)
-            self.noticiasDespoblacion = self.getFicherosDirectorio(self.dirDespoblacion)
-            self.noticiasSinMarcar = self.getFicherosDirectorio(self.dirSinMarcar)
+            #Obtenemos las rutas de los archivos
+            noticiasNoDespoblacion = self.getFicherosDirectorio(self.dirNoDespoblacion)
+            noticiasDespoblacion = self.getFicherosDirectorio(self.dirDespoblacion)
+            noticiasSinMarcar = self.getFicherosDirectorio(self.dirSinMarcar)
 
             #Procesamiento de texto
-            self.listaPalabrasContadasDespoblacion = self.getPalabrasContadas(self.noticiasDespoblacion)
-            self.listaPalabrasContadasNoDespoblacion = self.getPalabrasContadas(self.noticiasNoDespoblacion)
+            listaPalabrasContadasDespoblacion = self.getPalabrasContadas(noticiasDespoblacion, 1)
+            listaPalabrasContadasNoDespoblacion = self.getPalabrasContadas(noticiasNoDespoblacion, 0)
 
-            print("Palabras Despoblacion:")
-            print(self.listaPalabrasContadasDespoblacion)
-            print("---------------------------------")
-            print("Palabras No Despoblacion:")
-            print(self.listaPalabrasContadasNoDespoblacion)
+            print("Lista Palabras Contadas Despoblacion")
+            print(listaPalabrasContadasDespoblacion)
+            print("Lista Palabras Contadas No Despoblacion")
+            print(listaPalabrasContadasNoDespoblacion)
+
+            listaPalabrasContadas = listaPalabrasContadasDespoblacion + listaPalabrasContadasNoDespoblacion
+
+            print("Lista Palabras Contadas")
+            print(listaPalabrasContadas)
+
+
+            #Obtenemos el counter total para guardar todas las palabras en un array
+            counterTotal = Counter()
+            for counter in listaPalabrasContadas:
+                counterTotal += counter
+            
+            print("Counter Total:")
+            print(counterTotal)
+
+
+            listaPalabras = []
+            for palabra in counterTotal:
+                listaPalabras.append(palabra)
+
+            print("listaPalabras")
+            print(listaPalabras)            
+
+            #Creamos el dataframe que le pasaremos al modelo con todas las palabras en las columnas y una fila por noticia 
+            df = pd.DataFrame(listaPalabrasContadas, columns=listaPalabras).fillna(0)
+            print(df)
+
+            #En X tenemos todas las palabras y su cuenta, es decir los datos que vamos a necesitar para predecir
+            X = df.drop("esDespoblacion", axis=1)
+
+            #En y tenemos la columna que queremos que prediga
+            y = df["esDespoblacion"]
+
+
+            #Divide los datos en training y testing
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1) # 80% training y 20% test
+
+            #Creamos el clasificador y lo entrenamos
+            clf = DecisionTreeClassifier()    
+            clf = clf.fit(X_train,y_train)
+
+            #Guardamos en una variable el resultado de la prediccion
+            y_pred = clf.predict(X_test)
+
+            #Imprimimos el % de acierto en consola
+            print(metrics.accuracy_score(y_test, y_pred))
+            
+            #Guardamos el modelo
+            self.guardarModelo(clf)
+
+
+    def getPalabrasNoticia(self, noticia):
+
+        #Abrimos la noticia y guardamos en raw el texto plano
+        f = open(noticia)
+        raw = f.read()
+
+        #Tokenizamos el texto guardandolo en una lista
+        tokens = word_tokenize(raw)
+
+        #Quitamos los elementos que no sean palabras
+        filteredAlNum = [w.lower() for w in tokens if w.isalnum()]
+
+        #Quitamos los elementos que sean preposiciones, determinantes, etc (palabras que no aportan la informacion que necesitamos)
+        filteredStopwords = [w for w in filteredAlNum if not w in self.stop_words]
+
+        #Eliminamos los sufijos y prefijos de las palabras de la ultima lista
+        filteredStem = [self.stemmer.stem(w) for w in filteredStopwords]
+
+        return filteredStem
+    
+    def getPalabrasContadas(self, listaNoticias, esDespoblacion):
+
+        listaPalabrasContadas = []
+        #Abrimos cada noticia y guardamos en un array las palabras de cada una
+        for noticia in listaNoticias:
+            listaPalabrasNoticia = self.getPalabrasNoticia(noticia)
+            #Contamos todas las palabras que se repiten guardando las palabras y las veces que aparecen
+            listaPalabrasContadasNoticia = Counter(listaPalabrasNoticia)
+            #Añadimos una nueva pareja, que nos servira para tener este dato en el dataframe
+            listaPalabrasContadasNoticia["esDespoblacion"] = esDespoblacion
+            #print("lista palabras contadas")
+            listaPalabrasContadas.append(listaPalabrasContadasNoticia)
+
+        #print(listaPalabrasContadas)
+        return listaPalabrasContadas
+
 
     
-    def getPalabrasContadas(self, listaNoticias):
+    def guardarModelo(self, model):
+        filename = QFileDialog.getSaveFileName(self, caption="Guardar modelo", filter="Modelo (*.model)")
+        with open(filename[0], 'wb') as file:
+            pickle.dump(model, file)
 
-        listaPalabras = []
+    
+    def cargarModelo(self, filename):
+        with open(filename, 'rb') as file:
+            pickle_model = pickle.load(file)
 
-        for noticia in listaNoticias:
-
-            #Abrimos cada noticia de no despoblacion y guardamos en raw el texto plano
-            print(noticia)
-            f = open(noticia)
-            raw = f.read()
-
-            #Tokenizamos el texto guardandolo en una lista
-            tokens = word_tokenize(raw)
-
-            #Quitamos los elementos que no sean palabras
-            filteredAlNum = [w.lower() for w in tokens if w.isalnum()]
-
-            #Quitamos los elementos que sean preposiciones, determinantes, etc (palabras que no aportan la informacion que necesitamos)
-            filteredStopwords = [w for w in filteredAlNum if not w in self.stop_words]
-
-            #Eliminamos los sufijos y prefijos de las palabras de la ultima lista
-            filteredStem = [self.stemmer.stem(w) for w in filteredStopwords]
-
-            #Añadimos a la lista de palabras que aparecen en las noticias de no despoblacion la ultima lista
-            listaPalabras += filteredStem
-        
-        #Contamos todas las palabras que se repiten guardando en una tupla las palabras y las veces que aparecen
-        palabrasContadas = Counter(listaPalabras)
-        return palabrasContadas
+        return pickle_model
 
     
 if __name__ == "__main__":
