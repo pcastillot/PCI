@@ -351,11 +351,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def mostrarResultadoNoticias(self, listaNoticias, listaPrediccion):
         #Inicializamos las variables y establecemos el numero de filas
         i = 0
-        prediccion = "No despoblacion"
         self.tableResultados.setRowCount(len(listaNoticias))
 
         #Por cada noticia se muestra en la tabla la noticia y la prediccion
         for noticia in listaNoticias:
+            prediccion = "No despoblacion"
             self.tableResultados.setItem(i, 0, QTableWidgetItem(listaNoticias[i]))
             if listaPrediccion[i] == 1:
                 prediccion = "Despoblacion"
