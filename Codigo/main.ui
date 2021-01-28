@@ -7,19 +7,19 @@
     <x>0</x>
     <y>0</y>
     <width>815</width>
-    <height>602</height>
+    <height>700</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
     <width>815</width>
-    <height>602</height>
+    <height>700</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
     <width>815</width>
-    <height>602</height>
+    <height>700</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -32,7 +32,7 @@
       <x>0</x>
       <y>0</y>
       <width>811</width>
-      <height>561</height>
+      <height>651</height>
      </rect>
     </property>
     <property name="currentIndex">
@@ -231,7 +231,7 @@
      <widget class="QPushButton" name="btnGenerarModelo">
       <property name="geometry">
        <rect>
-        <x>320</x>
+        <x>310</x>
         <y>190</y>
         <width>151</width>
         <height>41</height>
@@ -239,7 +239,7 @@
       </property>
       <property name="font">
        <font>
-        <pointsize>14</pointsize>
+        <pointsize>13</pointsize>
        </font>
       </property>
       <property name="text">
@@ -249,10 +249,10 @@
      <widget class="QGroupBox" name="groupBox_2">
       <property name="geometry">
        <rect>
-        <x>50</x>
-        <y>270</y>
-        <width>711</width>
-        <height>241</height>
+        <x>40</x>
+        <y>250</y>
+        <width>721</width>
+        <height>341</height>
        </rect>
       </property>
       <property name="title">
@@ -262,7 +262,7 @@
        <property name="geometry">
         <rect>
          <x>170</x>
-         <y>40</y>
+         <y>80</y>
          <width>91</width>
          <height>21</height>
         </rect>
@@ -286,7 +286,7 @@
        <property name="geometry">
         <rect>
          <x>350</x>
-         <y>40</y>
+         <y>80</y>
          <width>91</width>
          <height>21</height>
         </rect>
@@ -310,7 +310,7 @@
        <property name="geometry">
         <rect>
          <x>280</x>
-         <y>40</y>
+         <y>80</y>
          <width>91</width>
          <height>21</height>
         </rect>
@@ -334,7 +334,7 @@
        <property name="geometry">
         <rect>
          <x>460</x>
-         <y>40</y>
+         <y>80</y>
          <width>91</width>
          <height>21</height>
         </rect>
@@ -357,9 +357,9 @@
       <widget class="QTableWidget" name="tableEstadisticas">
        <property name="geometry">
         <rect>
-         <x>50</x>
-         <y>90</y>
-         <width>591</width>
+         <x>80</x>
+         <y>130</y>
+         <width>541</width>
          <height>121</height>
         </rect>
        </property>
@@ -397,6 +397,50 @@
         </property>
        </column>
       </widget>
+      <widget class="QPushButton" name="btnGuardarModelo">
+       <property name="geometry">
+        <rect>
+         <x>270</x>
+         <y>280</y>
+         <width>151</width>
+         <height>41</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Guardar Modelo</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="lblAlgoritmo">
+       <property name="geometry">
+        <rect>
+         <x>220</x>
+         <y>30</y>
+         <width>241</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>11</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="layoutDirection">
+        <enum>Qt::LeftToRight</enum>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
      </widget>
     </widget>
     <widget class="QWidget" name="tabTesting">
@@ -406,7 +450,7 @@
      <widget class="QLabel" name="label_3">
       <property name="geometry">
        <rect>
-        <x>50</x>
+        <x>-90</x>
         <y>30</y>
         <width>211</width>
         <height>31</height>
@@ -421,7 +465,7 @@
        <enum>Qt::LeftToRight</enum>
       </property>
       <property name="text">
-       <string>Modelo</string>
+       <string>Modelo </string>
       </property>
       <property name="alignment">
        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -433,7 +477,7 @@
      <widget class="QPushButton" name="btnRutaModelo">
       <property name="geometry">
        <rect>
-        <x>290</x>
+        <x>160</x>
         <y>30</y>
         <width>101</width>
         <height>31</height>
@@ -451,8 +495,8 @@
      <widget class="QPushButton" name="btnRutaNoticias">
       <property name="geometry">
        <rect>
-        <x>290</x>
-        <y>80</y>
+        <x>500</x>
+        <y>30</y>
         <width>101</width>
         <height>31</height>
        </rect>
@@ -469,8 +513,8 @@
      <widget class="QLabel" name="label_4">
       <property name="geometry">
        <rect>
-        <x>50</x>
-        <y>80</y>
+        <x>250</x>
+        <y>30</y>
         <width>211</width>
         <height>31</height>
        </rect>
@@ -496,9 +540,9 @@
      <widget class="QLabel" name="lblRutaNoticias">
       <property name="geometry">
        <rect>
-        <x>420</x>
-        <y>80</y>
-        <width>381</width>
+        <x>400</x>
+        <y>70</y>
+        <width>291</width>
         <height>31</height>
        </rect>
       </property>
@@ -514,9 +558,9 @@
      <widget class="QLabel" name="lblRutaModelo">
       <property name="geometry">
        <rect>
-        <x>420</x>
-        <y>30</y>
-        <width>381</width>
+        <x>60</x>
+        <y>70</y>
+        <width>291</width>
         <height>31</height>
        </rect>
       </property>
@@ -532,10 +576,10 @@
      <widget class="QGroupBox" name="groupBox">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>180</y>
+        <x>10</x>
+        <y>370</y>
         <width>761</width>
-        <height>341</height>
+        <height>241</height>
        </rect>
       </property>
       <property name="autoFillBackground">
@@ -544,6 +588,262 @@
       <property name="title">
        <string>Resultados</string>
       </property>
+      <widget class="QTableWidget" name="tableResultados">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>20</y>
+         <width>741</width>
+         <height>161</height>
+        </rect>
+       </property>
+       <column>
+        <property name="text">
+         <string>Noticia</string>
+        </property>
+       </column>
+       <column>
+        <property name="text">
+         <string>Predicción</string>
+        </property>
+       </column>
+      </widget>
+      <widget class="QPushButton" name="btnExportar">
+       <property name="geometry">
+        <rect>
+         <x>290</x>
+         <y>190</y>
+         <width>171</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>13</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Exportar</string>
+       </property>
+      </widget>
+     </widget>
+     <widget class="QPushButton" name="btnClasificar">
+      <property name="geometry">
+       <rect>
+        <x>300</x>
+        <y>320</y>
+        <width>171</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>13</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Clasificar Noticias</string>
+      </property>
+     </widget>
+     <widget class="QGroupBox" name="groupBox_3">
+      <property name="geometry">
+       <rect>
+        <x>30</x>
+        <y>110</y>
+        <width>711</width>
+        <height>201</height>
+       </rect>
+      </property>
+      <property name="title">
+       <string>Modelo</string>
+      </property>
+      <widget class="QLabel" name="label_8">
+       <property name="geometry">
+        <rect>
+         <x>290</x>
+         <y>30</y>
+         <width>91</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>11</pointsize>
+        </font>
+       </property>
+       <property name="layoutDirection">
+        <enum>Qt::LeftToRight</enum>
+       </property>
+       <property name="text">
+        <string>Precisión</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_9">
+       <property name="geometry">
+        <rect>
+         <x>490</x>
+         <y>30</y>
+         <width>91</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>11</pointsize>
+        </font>
+       </property>
+       <property name="layoutDirection">
+        <enum>Qt::LeftToRight</enum>
+       </property>
+       <property name="text">
+        <string>Acierto</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="lblPrecisionTesting">
+       <property name="geometry">
+        <rect>
+         <x>400</x>
+         <y>30</y>
+         <width>91</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>11</pointsize>
+        </font>
+       </property>
+       <property name="layoutDirection">
+        <enum>Qt::LeftToRight</enum>
+       </property>
+       <property name="text">
+        <string>%</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="lblAciertoTesting">
+       <property name="geometry">
+        <rect>
+         <x>600</x>
+         <y>30</y>
+         <width>91</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>11</pointsize>
+        </font>
+       </property>
+       <property name="layoutDirection">
+        <enum>Qt::LeftToRight</enum>
+       </property>
+       <property name="text">
+        <string>%</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="lblAlgoritmoTesting">
+       <property name="geometry">
+        <rect>
+         <x>100</x>
+         <y>30</y>
+         <width>211</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>11</pointsize>
+        </font>
+       </property>
+       <property name="layoutDirection">
+        <enum>Qt::LeftToRight</enum>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_10">
+       <property name="geometry">
+        <rect>
+         <x>-10</x>
+         <y>30</y>
+         <width>91</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>11</pointsize>
+        </font>
+       </property>
+       <property name="layoutDirection">
+        <enum>Qt::LeftToRight</enum>
+       </property>
+       <property name="text">
+        <string>Algoritmo</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QTableWidget" name="tableEstadisticasTesting">
+       <property name="geometry">
+        <rect>
+         <x>80</x>
+         <y>70</y>
+         <width>541</width>
+         <height>121</height>
+        </rect>
+       </property>
+       <attribute name="horizontalHeaderDefaultSectionSize">
+        <number>135</number>
+       </attribute>
+       <row>
+        <property name="text">
+         <string>Pred. Despoblacion</string>
+        </property>
+       </row>
+       <row>
+        <property name="text">
+         <string>Pred. No Despoblacion</string>
+        </property>
+       </row>
+       <row>
+        <property name="text">
+         <string>Recall</string>
+        </property>
+       </row>
+       <column>
+        <property name="text">
+         <string>true Despoblacion</string>
+        </property>
+       </column>
+       <column>
+        <property name="text">
+         <string>true No Despoblacion</string>
+        </property>
+       </column>
+       <column>
+        <property name="text">
+         <string>Precision</string>
+        </property>
+       </column>
+      </widget>
      </widget>
     </widget>
    </widget>
