@@ -597,6 +597,9 @@
          <height>161</height>
         </rect>
        </property>
+       <attribute name="horizontalHeaderDefaultSectionSize">
+        <number>369</number>
+       </attribute>
        <column>
         <property name="text">
          <string>Noticia</string>

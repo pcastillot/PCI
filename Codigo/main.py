@@ -1,8 +1,10 @@
 from main_ui import *
-from os import listdir
-from os.path import expanduser, isfile, join
+from os import listdir, mkdir, linesep
+from os.path import expanduser, isfile, join, split
 from PyQt5.QtWidgets import QFileDialog, QTableWidgetItem
-from nltk import *
+from nltk.corpus import stopwords
+from nltk.stem import SnowballStemmer
+from nltk import word_tokenize
 from collections import Counter
 from sklearn.tree import DecisionTreeClassifier # Import Decision Tree Classifier
 from sklearn.neighbors import KNeighborsClassifier
@@ -11,20 +13,22 @@ from sklearn import metrics #Import scikit-learn metrics module for accuracy cal
 from joblib import dump, load
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import confusion_matrix
-import pickle
-import pandas as pd
-import glob
+from sklearn.feature_extraction.text import TfidfTransformer
+from pickle import dump, load
+from pandas import DataFrame
+from glob import glob
 import ctypes
-import numpy as np
-import random
+from random import randrange
+from openpyxl import Workbook
+from shutil import copy
+
 
 class Modelo():
 
-    def __init__(self, clasificador, precision, acierto, listaPalabras, matrizResultados, algoritmo):
+    def __init__(self, clasificador, precision, acierto, matrizResultados, algoritmo):
         self.clasificador = clasificador
         self.precision = precision
         self.acierto = acierto
-        self.listaPalabras = listaPalabras
         self.matrizResultados = matrizResultados
         self.algoritmo = algoritmo
 
@@ -32,14 +36,15 @@ class Modelo():
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     dirModelo = None
-    dirDespoblacion = "..\\Datos\\despoblacion"
-    dirNoDespoblacion = "..\\Datos\\no_despoblacion"
-    dirRutaNoticias = "..\\Datos\\unlabeled"
-    noticiasTesting = None
+    dirDespoblacion = None
+    dirNoDespoblacion = None
+    dirRutaNoticias = None
+    noticiasTesting = dict()
     listaPalabrasContadasDespoblacion = []
     listaPalabrasContadasNoDespoblacion = []
     listaPalabrasContadasSinMarcar = []
     listaPalabras = []
+    listaPalabrasDiccionario = []
     modelo = None
     listaPalabrasCompleta = []
     listaNoticias = []
@@ -48,10 +53,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     
 
     #Inicializamos el stopwords
-    stop_words = set(corpus.stopwords.words('spanish'))
+    stop_words = set(stopwords.words('spanish'))
 
     #Inicializamos el stemmer
-    stemmer = stem.SnowballStemmer('spanish')
+    stemmer = SnowballStemmer('spanish')
 
 
 
@@ -59,6 +64,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         #Inicializacion de la ventana y listeners
         QtWidgets.QMainWindow.__init__(self, *args, **kwargs)
         self.setupUi(self)
+        #Signals
         self.btnRutaDespoblacion.clicked.connect(lambda: self.abrirRuta(0))
         self.btnRutaNoDespoblacion.clicked.connect(lambda: self.abrirRuta(1))
         self.btnRutaNoticias.clicked.connect(lambda: self.abrirRuta(2))
@@ -66,13 +72,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.btnRutaModelo.clicked.connect(self.abrirModelo)
         self.btnGenerarModelo.clicked.connect(self.generarModelo)
         self.btnExportar.clicked.connect(lambda: self.exportarResultado(self.noticiasTesting))
-        
-        #Desactivado hasta solucionarlo
-        #self.btnClasificar.clicked.connect(self.clasificarNoticias)
+        self.btnClasificar.clicked.connect(self.clasificarNoticias)
 
-        listaTest = self.generarListaTest()
-        listaPrediccion = self.generarPrediccionTest()
-        self.btnClasificar.clicked.connect(lambda: self.mostrarResultadoNoticias(listaTest, listaPrediccion))
+        #Inicializacion diccionario castellano stemmed
+        self.listaPalabrasDiccionario = self.generarListaTXT()
         
     
     def abrirRuta(self, i):
@@ -81,15 +84,27 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         #Dependiendo del boton presionado se guardara la ruta en diferentes variables
         if i == 0:
-            self.lblRutaDespoblacion.setText(my_dir)
+            if len(my_dir) > 50:
+                self.lblRutaDespoblacion.setText("..." + my_dir[-51:])
+            else:
+                self.lblRutaDespoblacion.setText(my_dir)
+
             self.dirDespoblacion = my_dir
 
         elif i == 1: 
-            self.lblRutaNoDespoblacion.setText(my_dir)
+            if len(my_dir) > 50:
+                self.lblRutaNoDespoblacion.setText("..." + my_dir[-51:])
+            else:
+                self.lblRutaNoDespoblacion.setText(my_dir)
+
             self.dirNoDespoblacion = my_dir
 
         elif i == 2: 
-            self.lblRutaNoticias.setText(my_dir)
+            if len(my_dir) > 50:
+                self.lblRutaNoticias.setText("..." + my_dir[-51:])
+            else:
+                self.lblRutaNoticias.setText(my_dir)
+
             self.dirRutaNoticias = my_dir
 
     def abrirModelo(self):
@@ -108,7 +123,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def getFicherosDirectorio(self, dir):
         #Crea una lista con la ruta de todos los ficheros
-        ficheros = glob.glob(dir + "/*.txt")
+        ficheros = glob(dir + "/*.txt")
         return ficheros
 
 
@@ -125,38 +140,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             #Procesamiento de texto
             listaPalabrasContadasDespoblacion = self.getPalabrasContadas(noticiasDespoblacion, 1)
             listaPalabrasContadasNoDespoblacion = self.getPalabrasContadas(noticiasNoDespoblacion, 0)
-
-            #print("Lista Palabras Contadas Despoblacion")
-            #print(listaPalabrasContadasDespoblacion)
-            #print("Lista Palabras Contadas No Despoblacion")
-            #print(listaPalabrasContadasNoDespoblacion)
-
             listaPalabrasContadas = listaPalabrasContadasDespoblacion + listaPalabrasContadasNoDespoblacion
 
-            #print("Lista Palabras Contadas")
-            #print(listaPalabrasContadas)
-
-
-            #Obtenemos el counter total para guardar todas las palabras en un array
-            counterTotal = Counter()
-            for counter in listaPalabrasContadas:
-                counterTotal += counter
-            
-            #print("Counter Total:")
-            #print(counterTotal)
-
-
-            listaPalabras = []
-            for palabra in counterTotal:
-                listaPalabras.append(palabra)
-            
-            self.listaPalabrasCompleta = listaPalabras
-
-            #print("listaPalabras")
-            #print(listaPalabras)            
-
             #Creamos el dataframe que le pasaremos al modelo con todas las palabras en las columnas y una fila por noticia 
-            df = pd.DataFrame(listaPalabrasContadas, columns=listaPalabras).fillna(0)
+            df = DataFrame(listaPalabrasContadas, columns=self.listaPalabrasDiccionario).fillna(0)
             print(df)
 
             #En X tenemos todas las palabras y su cuenta, es decir los datos que vamos a necesitar para predecir
@@ -185,19 +172,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 clf = MultinomialNB()   
                 clf = clf.fit(X_train,y_train)
 
-            #Algoritmo 4
-            elif self.cbAlgoritmo.currentIndex() == 3:
-                clf = DecisionTreeClassifier()    
-                clf = clf.fit(X_train,y_train)
-
-            #Algoritmo 5
-            elif self.cbAlgoritmo.currentIndex() == 4:
-                clf = DecisionTreeClassifier()    
-                clf = clf.fit(X_train,y_train)
-
             #Guardamos en variables los resultados de la prediccion
             y_pred = clf.predict(X_test)
-
             algoritmo = self.cbAlgoritmo.currentText()
             acierto = round(metrics.accuracy_score(y_test, y_pred)*100, 2)
             precision = round(metrics.precision_score(y_test, y_pred)*100, 2)
@@ -218,7 +194,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.mostrarResultadosTabla(matrizResultados, self.tableEstadisticas)
             
             #Guardamos el modelo generado
-            self.modeloGenerado = Modelo(clf, precision, acierto, listaPalabras, matrizResultados, algoritmo)
+            self.modeloGenerado = Modelo(clf, precision, acierto, matrizResultados, algoritmo)
 
     
 
@@ -232,7 +208,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         tableEstadisticas.setItem(0, 2, QTableWidgetItem(str(round(matrizResultados[0][0]/(matrizResultados[0][0]+matrizResultados[0][1]), 2)*100) + "%"))
         tableEstadisticas.setItem(1, 2, QTableWidgetItem(str(round(matrizResultados[1][1]/(matrizResultados[1][0]+matrizResultados[1][1]), 2)*100) + "%"))
 
+
+    #Funcion para clasificar las noticias con el modelo cargado y mostrarlas en la lista
     def clasificarNoticias(self):
+
+        #Limpiamos el diccionario para no mezclar resultados
+        self.noticiasTesting.clear()
 
         #Si tenemos un modelo y ruta seleccionados comenzamos el procesamiento de las noticias
         if self.modelo and self.dirRutaNoticias:
@@ -255,16 +236,24 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 if palabra not in listaPalabrasFinal:
                     listaPalabrasFinal.append(palabra)
             
-            dfNoticias = pd.DataFrame(listaPalabrasContadas, columns=listaPalabrasFinal).fillna(0)
+            dfNoticias = DataFrame(listaPalabrasContadas, columns=self.listaPalabrasDiccionario).fillna(0)
+            print(dfNoticias)
 
-            X = dfNoticias
+            X = dfNoticias.drop("esDespoblacion", axis=1)
 
-            y_pred = self.modelo.predict(X)
-            print(y_pred)
+            y_pred = self.modelo.clasificador.predict(X)
+            
+
 
             #Creamos un diccionario con una clave por noticia y su valor sera la prediccion
             for noticia in noticias:
-                self.noticiasTesting[noticia] = y_pred[noticias.index(noticia)]
+                prediccion = "No despoblacion"
+
+                if y_pred[noticias.index(noticia)] == 1:
+                    prediccion = "Despoblacion"
+
+                print("Guardando: " + noticia + " --> " + prediccion)
+                self.noticiasTesting[noticia] = prediccion
             
             self.mostrarResultadoNoticias(self.noticiasTesting)
         
@@ -279,10 +268,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 
-    def getPalabrasNoticia(self, noticia):
+    def getPalabrasNoticia(self, noticia, utf=None):
 
         #Abrimos la noticia y guardamos en raw el texto plano
-        f = open(noticia)
+        if utf:
+            f = open(noticia, encoding='utf-8')
+        else:
+            f = open(noticia)
         raw = f.read()
 
         #Tokenizamos el texto guardandolo en una lista
@@ -316,16 +308,37 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         #print(listaPalabrasContadas)
         return listaPalabrasContadas
 
-    
+    #Funcion para exportar el resultado a un excel y ademas crear dos carpetas de clasificacion metiendo en cada una las noticias correspondientes
     def exportarResultado(self, dicNoticias):
         if dicNoticias:
-            for noticia in dicNoticias:
-                if dicNoticias[noticia]==1:
-                    #Mover noticia a carpeta prediccion/despoblacion
-                    print("Moviendo a despoblacion: " + noticia)
-                else:
-                    #Mover noticia a carpeta prediccion/no_despoblacion
-                    print("Moviendo a no despoblacion: " + noticia)
+            wb = Workbook()
+            ruta = QFileDialog.getExistingDirectory(self, "Selecciona una carpeta", expanduser("~"), QFileDialog.ShowDirsOnly)
+            if ruta != "":
+                print("Ruta seleccionada: " + ruta[0])
+                mkdir(ruta + "/Despoblacion")
+                mkdir(ruta + "/No despoblacion")
+
+                hoja = wb.active
+                hoja.title = "Noticia-Valor"
+
+                fila = 1 #Fila donde empezamos
+                colNoticia = 1 #Columna donde guardamos los nombres de las noticias
+                colDespoblacion = 2 #Columna donde guardamos la prediccion
+
+                for noticia in dicNoticias:
+                    hoja.cell(column=colNoticia, row=fila, value=split(noticia)[1])
+                    hoja.cell(column=colDespoblacion, row=fila, value=dicNoticias[noticia])
+                    if dicNoticias[noticia] == "Despoblacion":
+                        #Mover noticia a carpeta ruta/Despoblacion
+                        print("Moviendo a despoblacion: " + noticia)
+                        copy(noticia, ruta + "/Despoblacion/" + split(noticia)[1])
+                    else:
+                        #Mover noticia a carpeta ruta/No_despoblacion
+                        print("Moviendo a no despoblacion: " + noticia)
+                        copy(noticia, ruta + "/No despoblacion/" + split(noticia)[1])
+                    fila+=1
+
+                wb.save(filename=ruta + "/resultado.xlsx")
         
         else:
             ctypes.windll.user32.MessageBoxW(0, "Debes clasificar las noticias con un modelo primero", "Error al exportar resultado", 0)
@@ -337,34 +350,45 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             filename = QFileDialog.getSaveFileName(self, caption="Guardar modelo", filter="Modelo (*.model)")
             if filename[0] != "":
                 with open(filename[0], 'wb') as file:
-                    pickle.dump(modelo, file)
+                    dump(modelo, file)
         else:
             ctypes.windll.user32.MessageBoxW(0, "Debes generar un modelo", "Error al guardar modelo", 0)
 
-    
+    #Funcion para guardar en una variable el modelo cargado
     def cargarModelo(self, filename):
         with open(filename, 'rb') as file:
-            pickle_model = pickle.load(file)
+            pickle_model = load(file)
 
         return pickle_model
 
-    def mostrarResultadoNoticias(self, listaNoticias, listaPrediccion):
-        #Inicializamos las variables y establecemos el numero de filas
-        i = 0
-        self.tableResultados.setRowCount(len(listaNoticias))
-
+    def mostrarResultadoNoticias(self, dicPrediccion):
+        #Establecemos el numero de filas
+        self.tableResultados.setRowCount(len(dicPrediccion))
+        i=0
         #Por cada noticia se muestra en la tabla la noticia y la prediccion
-        for noticia in listaNoticias:
-            prediccion = "No despoblacion"
-            self.tableResultados.setItem(i, 0, QTableWidgetItem(listaNoticias[i]))
-            if listaPrediccion[i] == 1:
-                prediccion = "Despoblacion"
-
-            self.tableResultados.setItem(i, 1, QTableWidgetItem(prediccion))
-            i += 1
+        for noticia in dicPrediccion:
+            self.tableResultados.setItem(i, 0, QTableWidgetItem(split(noticia)[1]))
+            self.tableResultados.setItem(i, 1, QTableWidgetItem(dicPrediccion[noticia]))
+            i+=1
+            
     
+    def eliminarDuplicados(self, lista):
+        listaDef = []
+        for elemento in lista:
+            if elemento not in listaDef:
+                listaDef.append(elemento)
 
+        return listaDef
 
+    #Funcion para recoger el diccionario lematizado y guardarlo en una lista
+    def generarListaTXT(self):
+        lista = []
+        file = open("dicStemmed.txt", "r")
+        for linea in file:
+            lista.append(linea[:-1])
+        
+        file.close()
+        return lista
 
 
     #Funciones para testear
@@ -378,9 +402,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def generarPrediccionTest(self):
         listaPrediccion = []
         for i in range(50):
-            listaPrediccion.append(random.randrange(2))
+            listaPrediccion.append(randrange(2))
         
         return listaPrediccion
+
+    
 
 
     

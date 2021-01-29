@@ -215,6 +215,7 @@ class Ui_MainWindow(object):
         self.tableResultados.setHorizontalHeaderItem(0, item)
         item = QtWidgets.QTableWidgetItem()
         self.tableResultados.setHorizontalHeaderItem(1, item)
+        self.tableResultados.horizontalHeader().setDefaultSectionSize(369)
         self.btnExportar = QtWidgets.QPushButton(self.groupBox)
         self.btnExportar.setGeometry(QtCore.QRect(290, 190, 171, 31))
         font = QtGui.QFont()
